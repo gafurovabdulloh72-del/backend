@@ -23,7 +23,11 @@ app.add_middleware(
 # ═══════════════════════════════════════════════
 # ⚙️  SOZLAMALAR
 # ═══════════════════════════════════════════════
-ADMIN_ID = int(os.getenv("ADMIN_ID", "0"))
+try:
+    ADMIN_ID = int(os.getenv("ADMIN_ID", "0"))
+except (ValueError, TypeError):
+    ADMIN_ID = 0
+    print("ADMIN_ID xato! Faqat raqam bo'lishi kerak")
 DATABASE  = os.getenv("DB_PATH", "kuntartibi.db")
 PORT      = int(os.getenv("PORT", "8000"))
 
@@ -143,11 +147,7 @@ def check_admin_status(user_id: int):
 
 @app.post("/api/bootstrap")
 def bootstrap(data: AccountIn):
-    {
-  "login": "941434499",
-  "password": "Abdulloh1222",
-  "display_name": "Admin"
-}
+    """Birinchi akkauntni yaratish (faqat DB bo'sh bo'lsa ishlaydi)"""
     with db() as c:
         count = c.execute("SELECT COUNT(*) FROM app_accounts").fetchone()[0]
         if count > 0:

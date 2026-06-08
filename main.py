@@ -141,6 +141,24 @@ def root():
 def check_admin_status(user_id: int):
     return {"is_admin": user_id == ADMIN_ID}
 
+@app.post("/api/bootstrap")
+def bootstrap(data: AccountIn):
+    {
+  "login": "941434499",
+  "password": "Abdulloh1222",
+  "display_name": "Admin"
+}
+    with db() as c:
+        count = c.execute("SELECT COUNT(*) FROM app_accounts").fetchone()[0]
+        if count > 0:
+            raise HTTPException(400, detail="Akkauntlar allaqachon mavjud! /admin/accounts dan foydalaning.")
+        c.execute(
+            "INSERT INTO app_accounts (login, password, display_name) VALUES (?,?,?)",
+            (data.login.strip(), hash_pw(data.password), data.display_name or data.login)
+        )
+        c.commit()
+    return {"ok": True, "message": f"✅ Birinchi akkaunt yaratildi: {data.login}"}
+
 # ─── LOGIN ────────────────────────────────────
 @app.post("/api/login")
 def login(data: LoginIn):

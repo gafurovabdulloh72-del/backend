@@ -280,6 +280,18 @@ def admin_plans(admin_login: str, user_id: Optional[int] = None):
         q += " ORDER BY p.created_at DESC LIMIT 200"
         return rows(c.execute(q, params).fetchall())
 
+@app.get("/admin/user_state")
+def admin_user_state(admin_login: str, user_id: int):
+    """Foydalanuvchining to'liq haftalik jadvalini olish"""
+    check_admin(admin_login)
+    with db() as c:
+        row = c.execute(
+            "SELECT state_json FROM user_states WHERE user_id=?", (user_id,)
+        ).fetchone()
+    if not row:
+        raise HTTPException(404, "Foydalanuvchi hali hech narsa saqlamagan")
+    return {"state_json": row["state_json"]}
+
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run("main:app", host="0.0.0.0", port=PORT)

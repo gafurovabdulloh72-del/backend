@@ -69,6 +69,7 @@ def init_db():
             password     TEXT    NOT NULL,
             display_name TEXT    DEFAULT '',
             is_active    INTEGER DEFAULT 1,
+            is_admin     INTEGER DEFAULT 0,
             created_at   TEXT    DEFAULT (datetime('now','localtime'))
         );
 
@@ -151,13 +152,13 @@ def bootstrap(data: AccountIn):
     with db() as c:
         count = c.execute("SELECT COUNT(*) FROM app_accounts").fetchone()[0]
         if count > 0:
-            raise HTTPException(400, detail="Akkauntlar allaqachon mavjud! /admin/accounts dan foydalaning.")
+            raise HTTPException(400, detail="Akkauntlar allaqachon mavjud!")
         c.execute(
-            "INSERT INTO app_accounts (login, password, display_name) VALUES (?,?,?)",
+            "INSERT INTO app_accounts (login, password, display_name, is_admin) VALUES (?,?,?,1)",
             (data.login.strip(), hash_pw(data.password), data.display_name or data.login)
         )
         c.commit()
-    return {"ok": True, "message": f"✅ Birinchi akkaunt yaratildi: {data.login}"}
+    return {"ok": True, "message": f"✅ Admin akkaunt yaratildi: {data.login}"}
 
 # ─── LOGIN ────────────────────────────────────
 @app.post("/api/login")
@@ -174,7 +175,8 @@ def login(data: LoginIn):
         return {
             "ok": True,
             "display_name": row["display_name"] or row["login"],
-            "login": row["login"]
+            "login": row["login"],
+            "is_admin": bool(row["is_admin"])
         }
 
 # ─── State ────────────────────────────────────

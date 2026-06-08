@@ -56,6 +56,13 @@ def init_db():
             last_seen  TEXT    DEFAULT (datetime('now','localtime'))
         );
 
+        CREATE TABLE IF NOT EXISTS user_states (
+            user_id    INTEGER PRIMARY KEY,
+            state_json TEXT    NOT NULL DEFAULT '{}',
+            updated_at TEXT    DEFAULT (datetime('now','localtime')),
+            FOREIGN KEY (user_id) REFERENCES users(id)
+        );
+
         CREATE TABLE IF NOT EXISTS plans (
             id          INTEGER PRIMARY KEY AUTOINCREMENT,
             user_id     INTEGER NOT NULL,
@@ -76,8 +83,39 @@ init_db()
 # ═══════════════════════════════════════════════
 # 📦  MODELLAR
 # ═══════════════════════════════════════════════
+class StateIn(BaseModel):
+    user_id:    int
+    state_json: str
+
+@app.post("/api/state")
+def save_state(s: StateIn):
+    with db() as c:
+        c.execute("""
+            INSERT INTO user_states (user_id, state_json, updated_at)
+            VALUES (?, ?, datetime('now','localtime'))
+            ON CONFLICT(user_id) DO UPDATE SET
+                state_json = excluded.state_json,
+                updated_at = datetime('now','localtime')
+        """, (s.user_id, s.state_json))
+        c.commit()
+    return {"ok": True}
+
+@app.get("/api/state")
+def get_state(user_id: int):
+    with db() as c:
+        row = c.execute(
+            "SELECT * FROM user_states WHERE user_id=?", (user_id,)
+        ).fetchone()
+        if not row:
+            raise HTTPException(404, "State topilmadi")
+        return dict(row)
+
+class StateIn(BaseModel):
+    user_id:    int
+    state_json: str
+
 class UserIn(BaseModel):
-    id: int
+    id:         int
     first_name: str
     last_name:  Optional[str] = ""
     username:   Optional[str] = ""

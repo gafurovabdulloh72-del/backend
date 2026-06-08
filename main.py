@@ -1,4 +1,3 @@
-
 """KUN TARTIBI — BACKEND"""
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
@@ -210,6 +209,17 @@ def upsert_user(u: UserIn):
 @app.get("/api/check_admin")
 def check_admin_status(user_id: int):
     return {"is_admin": False}
+
+@app.get("/api/check_active")
+def check_active(login: str):
+    """Foydalanuvchi hali ham faolmi tekshirish"""
+    with db() as c:
+        row = c.execute(
+            "SELECT is_active FROM app_accounts WHERE login=?", (login.strip(),)
+        ).fetchone()
+    if not row:
+        return {"active": False}
+    return {"active": bool(row["is_active"])}
 
 # ── ADMIN ─────────────────────────────────────
 @app.get("/admin/accounts")
